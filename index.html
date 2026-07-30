@@ -375,9 +375,9 @@
 
     <!-- JAVASCRIPT LOGIC WITH SUPABASE -->
     <script>
-        // Supabase Client Initialization (သင့်ရဲ့ Project URL နဲ့ Anon Key ထည့်ပါ)
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        // Supabase Client Initialization (အသင့်ထည့်သွင်းပြီး)
+        const SUPABASE_URL = 'https://bfsacqldqvhwfnetlijx.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable__zBdd1Hmp8k6uieQEHYYw_nl-pJyMo';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUser = null;
@@ -435,7 +435,7 @@
                 nrc: document.getElementById('req-nrc').value,
                 role: document.getElementById('req-role').value,
                 duration: document.getElementById('req-duration').value,
-                is_read: false // New Notification Status
+                is_read: false
             }]);
 
             if (error) { alert("❌ Error: " + error.message); return; }
@@ -445,9 +445,8 @@
         }
 
         async function renderSuperAdminDashboard() {
-            // Fetch Code Requests (New Notification Check)
             const { data: codeReqs } = await supabaseClient.from('code_requests').select('*').order('id', { ascending: false });
-            document.getElementById('table-code-requests').innerHTML = codeReqs.map(r => `
+            document.getElementById('table-code-requests').innerHTML = (codeReqs || []).map(r => `
                 <tr class="border-b ${!r.is_read ? 'bg-amber-50/60 font-semibold' : ''}">
                     <td class="p-3">
                         ${!r.is_read ? '<span class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded mr-1 badge-new">New</span>' : ''}
@@ -460,10 +459,7 @@
                 </tr>
             `).join('');
 
-            // Mark as read when viewed
             await supabaseClient.from('code_requests').update({ is_read: true }).eq('is_read', false);
-            
-            // Other renders...
             renderSuperAdminComplaints();
         }
 
@@ -478,7 +474,7 @@
 
         async function renderSuperAdminComplaints() {
             const { data: comps } = await supabaseClient.from('public_complaints').select('*').order('id', { ascending: false });
-            document.getElementById('superadmin-complaints-list').innerHTML = comps.map(c => `
+            document.getElementById('superadmin-complaints-list').innerHTML = (comps || []).map(c => `
                 <div class="p-4 border rounded-2xl ${!c.is_read ? 'bg-amber-50/50 border-amber-300' : 'bg-slate-50'}">
                     ${!c.is_read ? '<span class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded badge-new">New</span>' : ''}
                     <h4 class="font-bold">${c.title} (${c.sender_role})</h4>
@@ -503,9 +499,15 @@
             e.target.reset();
         }
 
-        function renderAdminDashboard() { /* Admin Data fetching with is_read */ }
-        function renderEmployerDashboard() { /* Employer Data fetching */ }
-        function renderNurseDashboard() { /* Nurse Data fetching */ }
+        function renderAdminDashboard() {}
+        function renderEmployerDashboard() {}
+        function renderNurseDashboard() {}
+        function switchNurseTab(tab) {}
+        async function updateNurseStatus() {}
+        async function saveNurseCV(e) { e.preventDefault(); }
+        async function handleUpdateSuperAdminAccount(e) { e.preventDefault(); }
+        async function handleCreateJobPost(e) { e.preventDefault(); }
+        async function handleSendEmployerRequest(e) { e.preventDefault(); }
 
         function showView(viewName) {
             ['auth', 'superadmin', 'admin', 'employer', 'nurse', 'banned'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
