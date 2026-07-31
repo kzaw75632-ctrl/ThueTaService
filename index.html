@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ခလေး နှင့် ဖိုးဖွား စောင့်ရှောက်ရေး ပေါ်တယ်</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Padauk', sans-serif; }
+        .badge-new { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header / Navbar & Live Statistics -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-xl border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 py-3.5">
+            <div class="flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 text-white p-2.5 rounded-xl shadow-md font-bold text-lg">
+                        <i class="fa-solid fa-child-reaching"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-base tracking-wide text-white">ခလေး နှင့် ဖိုးဖွား စောင့်ရှောက်ရေး ပေါ်တယ်</h1>
+                        <p class="text-[11px] text-slate-400">Child & Elderly Care Service Management System</p>
+                    </div>
+                </div>
+
+                <!-- Header System Counter -->
+                <div class="flex items-center space-x-3 bg-slate-800/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60 text-xs shadow-inner">
+                    <span class="text-slate-300"><i class="fa-solid fa-users text-indigo-400 mr-1.5"></i>Users: <b id="stat-total-users" class="text-white">0</b></span>
+                    <span class="text-slate-600">|</span>
+                    <span class="text-slate-300"><i class="fa-solid fa-user-shield text-emerald-400 mr-1.5"></i>Admins: <b id="stat-total-admins" class="text-white">0</b></span>
+                    <span class="text-slate-600">|</span>
+                    <span class="text-slate-300"><i class="fa-solid fa-heart-pulse text-rose-400 mr-1.5"></i>Caregivers: <b id="stat-total-nurses" class="text-white">0</b></span>
+                </div>
+
+                <!-- User Logged Status & Actions -->
+                <div id="nav-user-info" class="hidden flex items-center space-x-3">
+                    <span id="user-role-badge" class="px-3 py-1 text-xs font-bold rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Role</span>
+                    <span id="user-display-name" class="font-bold text-sm text-slate-200">Name</span>
+                    <button onclick="logout()" class="text-xs bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white px-3 py-1.5 rounded-xl transition border border-rose-500/20 font-bold flex items-center">
+                        <i class="fa-solid fa-right-from-bracket mr-1.5"></i> ထွက်မည်
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Content Container -->
+    <main class="max-w-7xl mx-auto p-4 md:p-8 w-full flex-grow">
+
+        <!-- 1. AUTHENTICATION SECTION -->
+        <div id="view-auth" class="max-w-md mx-auto my-8">
+            <div class="bg-slate-200/80 p-1.5 rounded-2xl mb-5 flex shadow-inner text-center font-bold text-xs">
+                <button id="tab-login-btn" onclick="toggleAuthTab('login')" class="w-1/2 py-2.5 rounded-xl bg-white shadow-sm text-indigo-600 transition">Login ဝင်ရန်</button>
+                <button id="tab-request-btn" onclick="toggleAuthTab('request')" class="w-1/2 py-2.5 rounded-xl text-slate-600 hover:text-indigo-600 transition">Viber ဖြင့် Code တောင်းခံရန်</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <div id="form-login" class="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl shadow-sm">
+                        <i class="fa-solid fa-house-chimney-user"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900">ခလေး နှင့် ဖိုးဖွား စောင့်ရှောက်ရေး အကောင့်သို့ ဝင်ရောက်ရန်</h2>
+                    <p class="text-xs text-slate-500 mt-1">အီးမေးလ်၊ မှတ်ပုံတင်နှင့် Access Code ဖြည့်သွင်းပါ</p>
+                </div>
+
+                <form onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 text-slate-700">အီးမေးလ် / Email</label>
+                        <input type="email" id="login-email" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition" placeholder="user@service.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 text-slate-700">မှတ်ပုံတင်အမှတ် (NRC)</label>
+                        <input type="text" id="login-nrc" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition" placeholder="၁၂/သဃက(နိုင်)၁၂၃၄၅၆">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 text-slate-700">Access Code</label>
+                        <div class="relative">
+                            <input type="password" id="login-code" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition pr-10" placeholder="Access Code">
+                            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none">
+                                <i id="toggle-password-icon" class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-600/20 text-sm">
+                        Login ဝင်မည်
+                    </button>
+                </form>
+            </div>
+
+            <!-- CODE REQUEST FORM -->
+            <div id="form-request" class="hidden bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl shadow-sm">
+                        <i class="fa-brands fa-viber"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900">Viber ဖြင့် Code တောင်းခံရန်</h2>
+                    <p class="text-xs text-slate-500 mt-1">အချက်အလက်များနှင့် လိုချင်သည့်သက်တမ်း ရွေးချယ်ပေးပို့ပါ</p>
+                </div>
+
+                <form onsubmit="handleCodeRequest(event)" class="space-y-3.5 text-xs">
+                    <div>
+                        <label class="block font-bold mb-1.5 text-slate-700">အမည်အပြည့်အစုံ</label>
+                        <input type="text" id="req-name" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500" placeholder="နာမည်အပြည့်အစုံ">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1.5 text-emerald-700 flex items-center"><i class="fa-brands fa-viber mr-1.5"></i> Viber နံပါတ်</label>
+                        <input type="tel" id="req-viber" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500" placeholder="09xxxxxxxxx">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1.5 text-slate-700">မှတ်ပုံတင်အမှတ် (NRC)</label>
+                        <input type="text" id="req-nrc" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500" placeholder="၁၂/သဃက(နိုင်)၁၂၃၄၅၆">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1.5 text-slate-700">လျှောက်ထားလိုသည့် Role</label>
+                        <select id="req-role" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white">
+                            <option value="Employer">Employer (အလုပ်ရှင်)</option>
+                            <option value="Nurse">Caregiver / Nurse</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1.5 text-indigo-700 flex items-center"><i class="fa-regular fa-clock mr-1.5"></i> တောင်းဆိုလိုသည့် သက်တမ်း</label>
+                        <select id="req-duration" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white font-bold text-indigo-600">
+                            <option value="၁ လ သက်တမ်း">၁ လ သက်တမ်း</option>
+                            <option value="၃ လ သက်တမ်း">၃ လ သက်တမ်း</option>
+                            <option value="၆ လ သက်တမ်း">၆ လ သက်တမ်း</option>
+                            <option value="၁ နှစ် သက်တမ်း">၁ နှစ် သက်တမ်း</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-600/20 text-sm mt-2">
+                        တောင်းခံလွှာ ပေးပို့မည်
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 2. SUPER ADMIN DASHBOARD -->
+        <div id="view-superadmin" class="hidden space-y-6">
+            <div class="bg-gradient-to-r from-amber-500 to-orange-600 text-white p-6 rounded-3xl shadow-xl flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold flex items-center"><i class="fa-solid fa-crown mr-3"></i>Super Admin Master Dashboard</h2>
+                    <p class="text-xs text-amber-100 mt-1">Viber ကုဒ်တောင်းခံလွှာများနှင့် စောင့်ရှောက်ရေး အေဂျင်စီ စည်းကမ်းများကို စစ်ဆေးစီမံခြင်း။</p>
+                </div>
+                <button onclick="openSuperAdminSettingsModal()" class="bg-white text-amber-900 font-bold px-4 py-3 rounded-2xl text-xs shadow-lg hover:bg-amber-50 transition flex items-center">
+                    <i class="fa-solid fa-gear mr-2 text-amber-600"></i> Master အကောင့် ဆက်တင်များ
+                </button>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-4">
+                <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
+                    <h3 class="text-base font-bold text-slate-900 flex items-center">
+                        <i class="fa-solid fa-envelope-open-text mr-2 text-amber-500"></i> တိုင်ကြားစာများနှင့် အမေးအမြန်းများ
+                    </h3>
+                </div>
+                <div id="superadmin-complaints-list" class="space-y-3"></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                <h3 class="text-base font-bold mb-4 text-slate-900 flex items-center">
+                    <i class="fa-solid fa-user-nurse mr-2 text-indigo-600"></i> Caregivers များ၏ Star Ratings နှင့် ဓာတ်ပုံများ
+                </h3>
+                <div id="superadmin-all-nurses-list" class="grid md:grid-cols-2 gap-6"></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                    <h3 class="text-base font-bold mb-4 text-slate-900 flex items-center"><i class="fa-solid fa-key mr-2 text-amber-500"></i> Viber Code တောင်းခံလွှာများ</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-600 border-b">
+                                <tr>
+                                    <th class="p-3 rounded-l-xl">အမည် / Viber / NRC</th>
+                                    <th class="p-3">တောင်းဆိုထားမှု</th>
+                                    <th class="p-3 rounded-r-xl">ထုတ်ပေးရန်</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-code-requests" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                    <h3 class="text-base font-bold mb-4 text-slate-900 flex items-center"><i class="fa-solid fa-users-gear mr-2 text-indigo-600"></i> အကောင့်များ စီမံမှု</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-600 border-b">
+                                <tr>
+                                    <th class="p-3 rounded-l-xl">အမည် / Role</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 rounded-r-xl">Control</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-superadmin-users" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. ADMIN DASHBOARD -->
+        <div id="view-admin" class="hidden space-y-6">
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-6 rounded-3xl shadow-xl flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold flex items-center"><i class="fa-solid fa-user-shield mr-3"></i>Admin Management Dashboard</h2>
+                    <p class="text-xs text-emerald-100 mt-1">Star ပေးခြင်းနှင့် အလုပ်တောင်းခံလွှာများ စစ်ဆေးခြင်း။</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="openComplaintModal()" class="bg-amber-400 hover:bg-amber-500 text-slate-950 px-4 py-2.5 rounded-2xl text-xs font-bold shadow-lg transition flex items-center">
+                        <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> တိုင်ကြားမည်
+                    </button>
+                    <button onclick="openPostModal()" class="bg-white text-emerald-800 px-4 py-2.5 rounded-2xl text-xs font-bold shadow-lg hover:bg-emerald-50 transition flex items-center">
+                        <i class="fa-solid fa-plus mr-1.5"></i> ကြော်ငြာအသစ်
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-3">
+                <h3 class="text-base font-bold text-slate-900 flex items-center"><i class="fa-solid fa-comments mr-2 text-emerald-600"></i> တိုင်ကြားစာများနှင့် အကြောင်းပြန်ချက်များ</h3>
+                <div id="admin-my-complaints-list" class="space-y-2"></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                <h3 class="text-base font-bold mb-4 text-slate-900 flex items-center">
+                    <i class="fa-solid fa-star text-amber-500 mr-2"></i> Caregivers များ၏ CV နှင့် Star ပေးရန်
+                </h3>
+                <div id="admin-all-nurses-list" class="grid md:grid-cols-2 gap-6"></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                <h3 class="text-base font-bold mb-4 text-slate-900 flex items-center">
+                    <i class="fa-solid fa-paper-plane mr-2 text-indigo-600"></i> Employer များထံမှ ရောက်ရှိလာသော အလုပ်တောင်းခံလွှာများ
+                </h3>
+                <div id="admin-employer-requests-list" class="space-y-3"></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                <h3 class="text-base font-bold mb-4 text-slate-900 flex items-center"><i class="fa-solid fa-rectangle-ad mr-2 text-emerald-600"></i> မိမိ တင်ထားသော ကြော်ငြာများ</h3>
+                <div id="admin-posted-jobs-list" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- 4. EMPLOYER DASHBOARD -->
+        <div id="view-employer" class="hidden space-y-6">
+            <div class="bg-gradient-to-r from-indigo-600 to-violet-700 text-white p-6 md:p-8 rounded-3xl shadow-xl flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold mb-1">အလုပ်ရှင် Dashboard (Employer)</h2>
+                    <p class="text-xs text-indigo-100">ဝန်ထမ်းခေါ်ယူရန် တောင်းခံလွှာတင်ခြင်း။</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="openComplaintModal()" class="bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold px-4 py-3 rounded-2xl text-xs shadow-lg transition flex items-center">
+                        <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> တိုင်ကြားမည်
+                    </button>
+                    <button onclick="openEmployerRequestModal()" class="bg-white text-indigo-900 font-bold px-4 py-3 rounded-2xl text-xs shadow-lg transition flex items-center">
+                        <i class="fa-solid fa-file-signature mr-1.5"></i> အလုပ်တောင်းခံလွှာ ပို့မည်
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-3">
+                <h3 class="text-base font-bold text-slate-900 flex items-center"><i class="fa-solid fa-comments mr-2 text-indigo-600"></i> တိုင်ကြားစာများနှင့် အကြောင်းပြန်ချက်များ</h3>
+                <div id="employer-my-complaints-list" class="space-y-2"></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-4">
+                <h3 class="text-base font-bold text-slate-900 flex items-center"><i class="fa-solid fa-clipboard-check mr-2 text-indigo-600"></i> မိမိပေးပို့ခဲ့သော အလုပ်တောင်းခံလွှာများ</h3>
+                <div id="employer-my-requests-list" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- 5. CAREGIVER / NURSE DASHBOARD -->
+        <div id="view-nurse" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-sm">အလုပ်လုပ်ကိုင်နိုင်မှု Status သတ်မှတ်ရန်:</h3>
+                </div>
+                <div class="flex items-center space-x-2 text-xs">
+                    <select id="nurse-status-select" onchange="updateNurseStatus()" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold outline-none">
+                        <option value="🟢 အလုပ်ရှာဖွေနေသည်">🟢 အလုပ်ရှာဖွေနေသည်</option>
+                        <option value="🔴 အလုပ်ဝင်ရောက်နေဆဲ">🔴 အလုပ်ဝင်ရောက်နေဆဲ</option>
+                        <option value="🟡 ခရီးလွန်နေသည်">🟡 ခရီးလွန်နေသည်</option>
+                        <option value="⚪ အနားယူနေသည်">⚪ အနားယူနေသည်</option>
+                    </select>
+                    <button onclick="updateNurseStatus()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl transition shadow">Update</button>
+                </div>
+            </div>
+
+            <div class="bg-slate-200/80 p-1.5 rounded-2xl flex text-center font-bold text-xs shadow-inner">
+                <button onclick="switchNurseTab('jobs')" id="ntab-jobs" class="w-1/3 py-2.5 rounded-xl bg-white text-indigo-600 shadow-sm transition">အလုပ်ကြော်ငြာများ</button>
+                <button onclick="switchNurseTab('cv')" id="ntab-cv" class="w-1/3 py-2.5 rounded-xl text-slate-600 transition">CV & ဓာတ်ပုံ</button>
+                <button onclick="switchNurseTab('complaint')" id="ntab-complaint" class="w-1/3 py-2.5 rounded-xl text-slate-600 transition">တိုင်ကြားစာ</button>
+            </div>
+
+            <div id="nurse-sec-jobs" class="space-y-4">
+                <div id="nurse-jobs-container" class="grid md:grid-cols-2 gap-4"></div>
+            </div>
+
+            <div id="nurse-sec-cv" class="hidden bg-white p-8 rounded-3xl shadow-xl border max-w-2xl mx-auto space-y-5">
+                <h3 class="text-base font-bold text-slate-900">မိမိ၏ CV ဖောင် နှင့် ဓာတ်ပုံများ</h3>
+                <form onsubmit="saveNurseCV(event)" class="space-y-4 text-xs">
+                    <div><label class="block font-bold mb-1.5">ဖုန်းနံပါတ်</label><input type="tel" id="ncv-phone" required class="w-full p-3 bg-slate-50 border rounded-xl"></div>
+                    <div><label class="block font-bold mb-1.5">နေရပ်လိပ်စာ</label><textarea id="ncv-address" required class="w-full p-3 bg-slate-50 border rounded-xl" rows="2"></textarea></div>
+                    <div><label class="block font-bold mb-1.5">အတွေ့အကြုံ အနှစ်ချုပ်</label><textarea id="ncv-bio" required class="w-full p-3 bg-slate-50 border rounded-xl" rows="3"></textarea></div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl">CV သိမ်းဆည်းမည်</button>
+                </form>
+            </div>
+
+            <div id="nurse-sec-complaint" class="hidden bg-white p-8 rounded-3xl shadow-xl border max-w-2xl mx-auto space-y-4">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 class="text-base font-bold text-slate-900">တိုင်ကြားစာများ</h3>
+                    <button onclick="openComplaintModal()" class="bg-amber-500 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs">တိုင်ကြားမည်</button>
+                </div>
+                <div id="nurse-my-complaints-list" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <div id="view-banned" class="hidden max-w-md mx-auto my-16 bg-white p-8 rounded-3xl shadow-2xl border-2 border-rose-500 text-center">
+            <h2 class="text-2xl font-bold text-rose-600 mb-2">အကောင့် ပိတ်သိမ်းထားပါသည်</h2>
+            <button onclick="logout()" class="bg-slate-900 text-white font-bold px-6 py-3 rounded-2xl text-xs">Login သို့ ပြန်သွားမည်</button>
+        </div>
+    </main>
+
+    <!-- MODALS -->
+    <div id="modal-superadmin-settings" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 text-xs">
+            <h3 class="font-bold text-base">Master ဆက်တင်</h3>
+            <form onsubmit="handleUpdateSuperAdminAccount(event)" class="space-y-3">
+                <input type="email" id="sa-set-email" required class="w-full p-3 border rounded-xl" placeholder="Email အသစ်">
+                <input type="password" id="sa-set-new-code" required class="w-full p-3 border rounded-xl" placeholder="Code အသစ်">
+                <button type="submit" class="w-full bg-amber-500 text-slate-950 font-bold py-3 rounded-xl">သိမ်းမည်</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-post-job" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 text-xs">
+            <h3 class="font-bold text-base">ကြော်ငြာအသစ် တင်မည်</h3>
+            <form onsubmit="handleCreateJobPost(event)" class="space-y-3">
+                <input type="text" id="post-title" required class="w-full p-3 border rounded-xl" placeholder="ခေါင်းစဉ်">
+                <input type="text" id="post-location" required class="w-full p-3 border rounded-xl" placeholder="လိပ်စာ">
+                <input type="text" id="post-salary" required class="w-full p-3 border rounded-xl" placeholder="လစာ">
+                <textarea id="post-desc" rows="3" class="w-full p-3 border rounded-xl" placeholder="အသေးစိတ်"></textarea>
+                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl">တင်မည်</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-employer-request" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 text-xs">
+            <h3 class="font-bold text-base">အလုပ်တောင်းခံလွှာ ပို့ရန်</h3>
+            <form onsubmit="handleSendEmployerRequest(event)" class="space-y-3">
+                <input type="text" id="ereq-name" required class="w-full p-3 border rounded-xl" placeholder="အမည်">
+                <input type="tel" id="ereq-phone" required class="w-full p-3 border rounded-xl" placeholder="ဖုန်း">
+                <input type="text" id="ereq-patient-name" required class="w-full p-3 border rounded-xl" placeholder=" દર્દીအမည်">
+                <textarea id="ereq-address" required class="w-full p-3 border rounded-xl" placeholder="လိပ်စာ"></textarea>
+                <input type="text" id="ereq-price" required class="w-full p-3 border rounded-xl" placeholder="ဈေးနှုန်း">
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl">ပေးပို့မည်</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-complaint" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 text-xs">
+            <h3 class="font-bold text-base">တိုင်ကြားစာ ပို့ရန်</h3>
+            <form onsubmit="handleSendComplaint(event)" class="space-y-3">
+                <input type="text" id="comp-title" required class="w-full p-3 border rounded-xl" placeholder="ခေါင်းစဉ်">
+                <textarea id="comp-desc" rows="4" required class="w-full p-3 border rounded-xl" placeholder="အသေးစိတ်..."></textarea>
+                <button type="submit" class="w-full bg-amber-500 text-slate-950 font-bold py-3 rounded-xl">ပေးပို့မည်</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC WITH SUPABASE -->
+    <script>
+        // Supabase Client Initialization
+        const SUPABASE_URL = 'https://bfsacqldqvhwfnetlijx.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable__zBdd1Hmp8k6uieQEHYYw_nl-pJyMo';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+
+        window.onload = function() {
+            updateSystemCounters();
+        };
+
+        async function updateSystemCounters() {
+            const { count: usersCount } = await supabaseClient.from('users').select('*', { count: 'exact', head: true });
+            const { count: adminsCount } = await supabaseClient.from('users').select('*', { count: 'exact', head: true }).in('role', ['admin', 'super_admin']);
+            const { count: nursesCount } = await supabaseClient.from('users').select('*', { count: 'exact', head: true }).eq('role', 'Nurse');
+
+            document.getElementById('stat-total-users').innerText = usersCount || 0;
+            document.getElementById('stat-total-admins').innerText = adminsCount || 0;
+            document.getElementById('stat-total-nurses').innerText = nursesCount || 0;
+        }
+
+        function toggleAuthTab(tab) {
+            document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+            document.getElementById('form-request').classList.toggle('hidden', tab !== 'request');
+        }
+
+        // Toggle Password Visibility (မျက်လုံးပုံလေး နှိပ်၍ Code ကြည့်ရန်)
+        function togglePasswordVisibility() {
+            const codeInput = document.getElementById('login-code');
+            const toggleIcon = document.getElementById('toggle-password-icon');
+            if (codeInput.type === 'password') {
+                codeInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                codeInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
+        // Login ဝင်ရာတွင် အချက်တစ်ခုချင်းစီအလိုက် မှားယွင်းမှုကို စစ်ဆေးပေးခြင်း
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const nrc = document.getElementById('login-nrc').value.trim();
+            const code = document.getElementById('login-code').value.trim();
+
+            // ၁။ အီးမေးလ် ရှိမရှိ အရင်စစ်ဆေးမည်
+            const { data: emailCheck, error: emailErr } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('email', email);
+
+            if (emailErr || !emailCheck || emailCheck.length === 0) {
+                alert("❌ ထည့်သွင်းထားသော အီးမေးလ် (Email) မှာ မှားယွင်းနေပါသည် (သို့မဟုတ်) မရှိပါ။");
+                return;
+            }
+
+            // ၂။ မှတ်ပုံတင် (NRC) မှန်ကန်မှု ရှိမရှိ စစ်ဆေးမည်
+            const { data: nrcCheck, error: nrcErr } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('email', email)
+                .eq('nrc', nrc);
+
+            if (nrcErr || !nrcCheck || nrcCheck.length === 0) {
+                alert("❌ မှတ်ပုံတင်အမှတ် (NRC) မှားယွင်းနေပါသည်။");
+                return;
+            }
+
+            // ၃။ Access Code မှန်ကန်မှု ရှိမရှိ စစ်ဆေးမည်
+            const { data: user, error } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('email', email)
+                .eq('nrc', nrc)
+                .eq('code', code)
+                .single();
+
+            if (error || !user) {
+                alert("❌ Access Code (လျှို့ဝှက်ကုဒ်) မှားယွင်းနေပါသည်။");
+                return;
+            }
+
+            // အားလုံးမှန်ကန်ပါက Banned ဖြစ်မဖြစ် စစ်ဆေးပြီး ဝင်ရောက်မည်
+            if (user.status === 'banned' && user.role !== 'super_admin') {
+                showView('banned');
+                return;
+            }
+
+            currentUser = user;
+            updateNavUI();
+
+            if (currentUser.role === 'super_admin') { showView('superadmin'); renderSuperAdminDashboard(); }
+            else if (currentUser.role === 'admin') { showView('admin'); renderAdminDashboard(); }
+            else if (currentUser.role === 'Employer') { showView('employer'); renderEmployerDashboard(); }
+            else if (currentUser.role === 'Nurse') { showView('nurse'); renderNurseDashboard(); }
+        }
+
+        async function handleCodeRequest(e) {
+            e.preventDefault();
+            const { error } = await supabaseClient.from('code_requests').insert([{
+                name: document.getElementById('req-name').value,
+                viber: document.getElementById('req-viber').value,
+                nrc: document.getElementById('req-nrc').value,
+                role: document.getElementById('req-role').value,
+                duration: document.getElementById('req-duration').value,
+                is_read: false
+            }]);
+
+            if (error) { alert("❌ Error: " + error.message); return; }
+            alert("✅ Viber Code တောင်းခံလွှာ ပေးပို့ပြီးပါပြီ။");
+            e.target.reset();
+            toggleAuthTab('login');
+        }
+
+        async function renderSuperAdminDashboard() {
+            const { data: codeReqs } = await supabaseClient.from('code_requests').select('*').order('id', { ascending: false });
+            document.getElementById('table-code-requests').innerHTML = (codeReqs || []).map(r => `
+                <tr class="border-b ${!r.is_read ? 'bg-amber-50/60 font-semibold' : ''}">
+                    <td class="p-3">
+                        ${!r.is_read ? '<span class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded mr-1 badge-new">New</span>' : ''}
+                        <b>${r.name}</b><br><span class="text-emerald-600">${r.viber}</span>
+                    </td>
+                    <td class="p-3">${r.role} (${r.duration})</td>
+                    <td class="p-3">
+                        <button onclick="approveAndSellCode(${r.id}, '${r.name}', '${r.viber}', '${r.nrc}', '${r.role}', '${r.duration}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold">ထုတ်ပေးမည်</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            await supabaseClient.from('code_requests').update({ is_read: true }).eq('is_read', false);
+            renderSuperAdminComplaints();
+        }
+
+        async function approveAndSellCode(id, name, viber, nrc, role, duration) {
+            const newCode = 'CODE-' + Math.floor(1000 + Math.random() * 9000);
+            await supabaseClient.from('users').insert([{ name, email: viber + '@viber.user', nrc, code: newCode, role, status: 'active', approved_duration: duration }]);
+            await supabaseClient.from('code_requests').delete().eq('id', id);
+            alert(`✅ Code အောင်မြင်စွာ ထုတ်ပေးပြီးပါပြီ: ${newCode}`);
+            renderSuperAdminDashboard();
+            updateSystemCounters();
+        }
+
+        async function renderSuperAdminComplaints() {
+            const { data: comps } = await supabaseClient.from('public_complaints').select('*').order('id', { ascending: false });
+            document.getElementById('superadmin-complaints-list').innerHTML = (comps || []).map(c => `
+                <div class="p-4 border rounded-2xl ${!c.is_read ? 'bg-amber-50/50 border-amber-300' : 'bg-slate-50'}">
+                    ${!c.is_read ? '<span class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded badge-new">New</span>' : ''}
+                    <h4 class="font-bold">${c.title} (${c.sender_role})</h4>
+                    <p class="text-slate-600">${c.desc}</p>
+                </div>
+            `).join('');
+            await supabaseClient.from('public_complaints').update({ is_read: true }).eq('is_read', false);
+        }
+
+        async function handleSendComplaint(e) {
+            e.preventDefault();
+            await supabaseClient.from('public_complaints').insert([{
+                sender_id: currentUser.id,
+                sender_name: currentUser.name,
+                sender_role: currentUser.role,
+                title: document.getElementById('comp-title').value,
+                desc: document.getElementById('comp-desc').value,
+                is_read: false
+            }]);
+            alert("✅ တိုင်ကြားစာ ပေးပို့ပြီးပါပြီ။");
+            closeComplaintModal();
+            e.target.reset();
+        }
+
+        function renderAdminDashboard() {}
+        function renderEmployerDashboard() {}
+        function renderNurseDashboard() {}
+        function switchNurseTab(tab) {}
+        async function updateNurseStatus() {}
+        async function saveNurseCV(e) { e.preventDefault(); }
+        async function handleUpdateSuperAdminAccount(e) { e.preventDefault(); }
+        async function handleCreateJobPost(e) { e.preventDefault(); }
+        async function handleSendEmployerRequest(e) { e.preventDefault(); }
+
+        function showView(viewName) {
+            ['auth', 'superadmin', 'admin', 'employer', 'nurse', 'banned'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+        }
+
+        function updateNavUI() {
+            const navInfo = document.getElementById('nav-user-info');
+            if (currentUser) {
+                navInfo.classList.remove('hidden');
+                document.getElementById('user-display-name').innerText = currentUser.name;
+                document.getElementById('user-role-badge').innerText = currentUser.role.toUpperCase();
+            } else { navInfo.classList.add('hidden'); }
+        }
+
+        function logout() { currentUser = null; updateNavUI(); showView('auth'); }
+        function openComplaintModal() { document.getElementById('modal-complaint').classList.remove('hidden'); }
+        function closeComplaintModal() { document.getElementById('modal-complaint').classList.add('hidden'); }
+        function openPostModal() { document.getElementById('modal-post-job').classList.remove('hidden'); }
+        function closePostModal() { document.getElementById('modal-post-job').classList.add('hidden'); }
+        function openEmployerRequestModal() { document.getElementById('modal-employer-request').classList.remove('hidden'); }
+        function closeEmployerRequestModal() { document.getElementById('modal-employer-request').classList.add('hidden'); }
+        function openSuperAdminSettingsModal() { document.getElementById('modal-superadmin-settings').classList.remove('hidden'); }
+    </script>
+</body>
+</html>
